@@ -1,0 +1,51 @@
+:root {
+  --bg: #e7f3ef;
+  --bg-strong: #d4ebe5;
+  --ink: #2f241b;
+  --muted: #5f4c3b;
+  --accent: #20b8b2;
+  --panel-soft: rgba(230, 245, 239, 0.82);
+  --success: #1f5a3a;
+  --danger: #8f4f34;
+  --edge: rgba(47, 36, 27, 0.12);
+  --glow: rgba(32, 184, 178, 0.28);
+  --font-body: 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', serif;
+
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top, rgba(32, 184, 178, 0.2), transparent 24%),
+    radial-gradient(circle at 85% 16%, rgba(31, 90, 58, 0.08), transparent 20%),
+    linear-gradient(180deg, var(--bg), var(--bg-strong));
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100svh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100svh;
+}
