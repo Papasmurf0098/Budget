@@ -1,38 +1,38 @@
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #d7fff8;
-  --bg-strong: #83f1e1;
+  --bg: #86fff7;
+  --bg-strong: #00d8c7;
   --ink: #10232c;
-  --muted: #38606d;
-  --accent: #12d8d3;
-  --accent-strong: #0db4c7;
-  --success: #109d4a;
+  --muted: #144d61;
+  --accent: #00fff2;
+  --accent-strong: #00b8ff;
+  --success: #00c853;
   --danger: #f35f34;
-  --panel: rgba(245, 255, 252, 0.88);
-  --panel-soft: rgba(218, 255, 248, 0.72);
-  --edge: rgba(12, 71, 86, 0.14);
-  --edge-soft: rgba(255, 255, 255, 0.58);
+  --panel: rgba(243, 255, 254, 0.92);
+  --panel-soft: rgba(0, 255, 242, 0.16);
+  --edge: rgba(0, 132, 160, 0.22);
+  --edge-soft: rgba(255, 255, 255, 0.74);
   --shadow-strong: rgba(16, 35, 44, 0.16);
   --shadow-soft: rgba(16, 35, 44, 0.08);
-  --hero-glow-a: rgba(18, 216, 211, 0.34);
-  --hero-glow-b: rgba(243, 95, 52, 0.18);
-  --hero-surface-a: rgba(248, 255, 252, 0.96);
-  --hero-surface-b: rgba(223, 255, 245, 0.9);
-  --graphic-surface-a: rgba(238, 255, 251, 0.92);
-  --graphic-surface-b: rgba(197, 255, 236, 0.82);
-  --graphic-halo: rgba(114, 255, 236, 0.68);
-  --graphic-ring: rgba(15, 125, 115, 0.2);
-  --graphic-ring-alt: rgba(243, 95, 52, 0.22);
-  --chip-bg: rgba(16, 157, 74, 0.1);
-  --danger-soft: rgba(243, 95, 52, 0.12);
-  --field-bg: rgba(251, 255, 254, 0.94);
-  --focus-outline: rgba(18, 216, 211, 0.22);
-  --focus-border: rgba(13, 180, 199, 0.54);
-  --focus-shadow: rgba(18, 216, 211, 0.12);
-  --page-glow-a: rgba(18, 216, 211, 0.28);
-  --page-glow-b: rgba(243, 95, 52, 0.16);
-  --page-glow-c: rgba(16, 157, 74, 0.12);
+  --hero-glow-a: rgba(0, 255, 242, 0.52);
+  --hero-glow-b: rgba(243, 95, 52, 0.24);
+  --hero-surface-a: rgba(245, 255, 254, 0.98);
+  --hero-surface-b: rgba(168, 255, 245, 0.94);
+  --graphic-surface-a: rgba(231, 255, 252, 0.96);
+  --graphic-surface-b: rgba(94, 255, 235, 0.88);
+  --graphic-halo: rgba(0, 255, 242, 0.9);
+  --graphic-ring: rgba(0, 195, 179, 0.28);
+  --graphic-ring-alt: rgba(243, 95, 52, 0.28);
+  --chip-bg: rgba(0, 255, 242, 0.14);
+  --danger-soft: rgba(243, 95, 52, 0.14);
+  --field-bg: rgba(250, 255, 255, 0.98);
+  --focus-outline: rgba(0, 255, 242, 0.28);
+  --focus-border: rgba(0, 184, 255, 0.66);
+  --focus-shadow: rgba(0, 255, 242, 0.2);
+  --page-glow-a: rgba(0, 255, 242, 0.48);
+  --page-glow-b: rgba(243, 95, 52, 0.2);
+  --page-glow-c: rgba(0, 200, 83, 0.16);
 }
 
 :root[data-theme='dark'] {
