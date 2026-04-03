@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   startTransition,
   useEffect,
@@ -72,6 +72,7 @@ interface BucketDraft {
 
 type ThemeMode = 'light' | 'dark'
 type SectionKey = 'income' | 'expenses' | 'bills' | 'buckets'
+type PanelGraphicKind = 'overview' | 'reminders' | SectionKey
 
 const enterAnimation = {
   hidden: { opacity: 0, y: 24 },
@@ -80,6 +81,38 @@ const enterAnimation = {
 
 const sectionKeys: SectionKey[] = ['income', 'expenses', 'bills', 'buckets']
 const reminderDayOptions = [0, 1, 3, 7] as const
+
+function createGraphicAnimation({
+  x = 0,
+  y = 0,
+  rotate = 0,
+  scale = 1,
+  duration,
+  delay = 0,
+}: {
+  x?: number
+  y?: number
+  rotate?: number
+  scale?: number
+  duration: number
+  delay?: number
+}) {
+  return {
+    animate: {
+      x: [0, x, 0],
+      y: [0, y, 0],
+      rotate: [0, rotate, 0],
+      scale: [1, scale, 1],
+    },
+    transition: {
+      duration,
+      delay,
+      repeat: Number.POSITIVE_INFINITY,
+      repeatType: 'mirror' as const,
+      ease: 'easeInOut' as const,
+    },
+  }
+}
 
 function buildExpenseDraft(bucketId: string, monthKey = getCurrentMonthKey()): ExpenseDraft {
   return {
@@ -141,10 +174,45 @@ function createSectionState(value: boolean): Record<SectionKey, boolean> {
   }
 }
 
+function PanelGraphic({ kind }: { kind: PanelGraphicKind }) {
+  const prefersReducedMotion = useReducedMotion()
+  const motionEnabled = !prefersReducedMotion
+
+  return (
+    <div className={`panel-graphic panel-graphic--${kind}`} aria-hidden="true">
+      <motion.span
+        className="panel-graphic__shape panel-graphic__shape--one"
+        animate={
+          motionEnabled ? createGraphicAnimation({ x: 10, y: -12, rotate: 4, scale: 1.04, duration: 6.2 }) : undefined
+        }
+      />
+      <motion.span
+        className="panel-graphic__shape panel-graphic__shape--two"
+        animate={
+          motionEnabled ? createGraphicAnimation({ x: -8, y: 10, rotate: -6, scale: 0.98, duration: 7.4, delay: 0.3 }) : undefined
+        }
+      />
+      <motion.span
+        className="panel-graphic__shape panel-graphic__shape--three"
+        animate={
+          motionEnabled ? createGraphicAnimation({ x: 6, y: 12, rotate: 8, scale: 1.08, duration: 8.6, delay: 0.7 }) : undefined
+        }
+      />
+      <motion.span
+        className="panel-graphic__shape panel-graphic__shape--four"
+        animate={
+          motionEnabled ? createGraphicAnimation({ x: -12, y: -6, rotate: -8, scale: 1.03, duration: 9.1, delay: 0.4 }) : undefined
+        }
+      />
+    </div>
+  )
+}
+
 function SectionPanel({
   eyebrow,
   title,
   description,
+  graphicKind,
   isOpen,
   onToggle,
   children,
@@ -152,6 +220,7 @@ function SectionPanel({
   eyebrow: string
   title: string
   description: string
+  graphicKind: SectionKey
   isOpen: boolean
   onToggle: () => void
   children: ReactNode
@@ -165,6 +234,7 @@ function SectionPanel({
       variants={enterAnimation}
       transition={{ duration: 0.4 }}
     >
+      <PanelGraphic kind={graphicKind} />
       <div className="section-heading">
         <div className="section-heading__copy">
           <p className="eyebrow">{eyebrow}</p>
@@ -682,6 +752,7 @@ function App() {
           variants={enterAnimation}
           transition={{ delay: 0.04, duration: 0.42, ease: 'easeOut' }}
         >
+        <PanelGraphic kind="reminders" />
         <div className="section-heading reminder-panel__heading">
           <div className="section-heading__copy">
             <p className="eyebrow">Reminders</p>
@@ -816,6 +887,7 @@ function App() {
         variants={enterAnimation}
         transition={{ delay: 0.08, duration: 0.45, ease: 'easeOut' }}
       >
+        <PanelGraphic kind="overview" />
         <div className="overview-headline">
           <div>
             <p className="eyebrow">{getMonthLabel(selectedMonth)}</p>
@@ -870,6 +942,7 @@ function App() {
           eyebrow="Income"
           title="Track money earned"
           description="Log each paycheck or income source to see the actual total earned this month."
+          graphicKind="income"
           isOpen={openSections.income}
           onToggle={() => toggleSection('income')}
         >
@@ -1042,6 +1115,7 @@ function App() {
           eyebrow="Expenses"
           title="Log spending"
           description="Every save updates your month total and bucket balance instantly."
+          graphicKind="expenses"
           isOpen={openSections.expenses}
           onToggle={() => toggleSection('expenses')}
         >
@@ -1261,6 +1335,7 @@ function App() {
           eyebrow="Recurring bills"
           title="Track required monthly spend"
           description="Mark bills paid to create matching expense entries automatically."
+          graphicKind="bills"
           isOpen={openSections.bills}
           onToggle={() => toggleSection('bills')}
         >
@@ -1477,6 +1552,7 @@ function App() {
           eyebrow="Buckets"
           title="Budget each category"
           description="Set each bucket for the month, then watch spent and left update automatically."
+          graphicKind="buckets"
           isOpen={openSections.buckets}
           onToggle={() => toggleSection('buckets')}
         >
