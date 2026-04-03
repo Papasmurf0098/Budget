@@ -8,7 +8,8 @@ const packageJson = JSON.parse(
 ) as { name: string }
 
 const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? packageJson.name
-const base = process.env.GITHUB_ACTIONS ? `/${repoName}/` : '/'
+const base =
+  process.env.BASE_PATH ?? (process.env.GITHUB_ACTIONS ? `/${repoName}/` : '/')
 
 export default defineConfig({
   base,

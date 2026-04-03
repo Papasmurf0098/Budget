@@ -37,6 +37,8 @@ npm run preview
 
 The Vite base path is set automatically from `GITHUB_REPOSITORY` during GitHub Actions builds, so the app works when hosted at `https://<username>.github.io/<repo-name>/`.
 
+If the root Pages URL shows a blank or white screen, the repository is being served directly instead of the built Vite output. The canonical fix is still `Settings -> Pages -> Source -> GitHub Actions`. This repo also includes a committed `/app/` fallback build, and the root `index.html` redirects there when the site is served from a GitHub Pages branch.
+
 ## Phone install
 
 - iPhone: open the deployed site in Safari, tap Share, then `Add to Home Screen`

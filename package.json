@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && VITE_HTML_MODE=bundled vite build",
+    "build:pages-fallback": "rm -rf app && tsc -b && VITE_HTML_MODE=bundled BASE_PATH=./ vite build --outDir app",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
