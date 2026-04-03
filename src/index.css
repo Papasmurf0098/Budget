@@ -1,21 +1,84 @@
-:root {
-  --bg: #e7f3ef;
-  --bg-strong: #d4ebe5;
-  --ink: #2f241b;
-  --muted: #5f4c3b;
-  --accent: #20b8b2;
-  --panel-soft: rgba(230, 245, 239, 0.82);
-  --success: #1f5a3a;
-  --danger: #8f4f34;
-  --edge: rgba(47, 36, 27, 0.12);
-  --glow: rgba(32, 184, 178, 0.28);
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #d7fff8;
+  --bg-strong: #83f1e1;
+  --ink: #10232c;
+  --muted: #38606d;
+  --accent: #12d8d3;
+  --accent-strong: #0db4c7;
+  --success: #109d4a;
+  --danger: #f35f34;
+  --panel: rgba(245, 255, 252, 0.88);
+  --panel-soft: rgba(218, 255, 248, 0.72);
+  --edge: rgba(12, 71, 86, 0.14);
+  --edge-soft: rgba(255, 255, 255, 0.58);
+  --shadow-strong: rgba(16, 35, 44, 0.16);
+  --shadow-soft: rgba(16, 35, 44, 0.08);
+  --hero-glow-a: rgba(18, 216, 211, 0.34);
+  --hero-glow-b: rgba(243, 95, 52, 0.18);
+  --hero-surface-a: rgba(248, 255, 252, 0.96);
+  --hero-surface-b: rgba(223, 255, 245, 0.9);
+  --graphic-surface-a: rgba(238, 255, 251, 0.92);
+  --graphic-surface-b: rgba(197, 255, 236, 0.82);
+  --graphic-halo: rgba(114, 255, 236, 0.68);
+  --graphic-ring: rgba(15, 125, 115, 0.2);
+  --graphic-ring-alt: rgba(243, 95, 52, 0.22);
+  --chip-bg: rgba(16, 157, 74, 0.1);
+  --danger-soft: rgba(243, 95, 52, 0.12);
+  --field-bg: rgba(251, 255, 254, 0.94);
+  --focus-outline: rgba(18, 216, 211, 0.22);
+  --focus-border: rgba(13, 180, 199, 0.54);
+  --focus-shadow: rgba(18, 216, 211, 0.12);
+  --page-glow-a: rgba(18, 216, 211, 0.28);
+  --page-glow-b: rgba(243, 95, 52, 0.16);
+  --page-glow-c: rgba(16, 157, 74, 0.12);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #140b2d;
+  --bg-strong: #0b1736;
+  --ink: #eef4ff;
+  --muted: #99a9d6;
+  --accent: #5a70ff;
+  --accent-strong: #36d98a;
+  --success: #36d98a;
+  --danger: #ff7c73;
+  --panel: rgba(21, 24, 53, 0.84);
+  --panel-soft: rgba(38, 44, 90, 0.72);
+  --edge: rgba(137, 158, 255, 0.18);
+  --edge-soft: rgba(255, 255, 255, 0.06);
+  --shadow-strong: rgba(3, 5, 20, 0.45);
+  --shadow-soft: rgba(3, 5, 20, 0.28);
+  --hero-glow-a: rgba(113, 79, 255, 0.32);
+  --hero-glow-b: rgba(47, 124, 255, 0.24);
+  --hero-surface-a: rgba(30, 28, 73, 0.96);
+  --hero-surface-b: rgba(14, 29, 67, 0.9);
+  --graphic-surface-a: rgba(30, 35, 76, 0.92);
+  --graphic-surface-b: rgba(11, 23, 54, 0.88);
+  --graphic-halo: rgba(77, 122, 255, 0.62);
+  --graphic-ring: rgba(54, 217, 138, 0.24);
+  --graphic-ring-alt: rgba(113, 79, 255, 0.28);
+  --chip-bg: rgba(54, 217, 138, 0.12);
+  --danger-soft: rgba(255, 124, 115, 0.14);
+  --field-bg: rgba(14, 18, 43, 0.92);
+  --focus-outline: rgba(90, 112, 255, 0.28);
+  --focus-border: rgba(90, 112, 255, 0.58);
+  --focus-shadow: rgba(90, 112, 255, 0.16);
+  --page-glow-a: rgba(77, 122, 255, 0.22);
+  --page-glow-b: rgba(113, 79, 255, 0.22);
+  --page-glow-c: rgba(54, 217, 138, 0.12);
   --font-body: 'Avenir Next', 'Segoe UI', sans-serif;
   --font-display: 'Iowan Old Style', 'Palatino Linotype', serif;
+}
 
+:root {
   color: var(--ink);
   background:
-    radial-gradient(circle at top, rgba(32, 184, 178, 0.2), transparent 24%),
-    radial-gradient(circle at 85% 16%, rgba(31, 90, 58, 0.08), transparent 20%),
+    radial-gradient(circle at top, var(--page-glow-a), transparent 24%),
+    radial-gradient(circle at 85% 16%, var(--page-glow-b), transparent 20%),
+    radial-gradient(circle at 18% 78%, var(--page-glow-c), transparent 24%),
     linear-gradient(180deg, var(--bg), var(--bg-strong));
   font-family: var(--font-body);
   line-height: 1.5;
@@ -38,6 +101,15 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100svh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top, var(--page-glow-a), transparent 24%),
+    radial-gradient(circle at 85% 16%, var(--page-glow-b), transparent 20%),
+    radial-gradient(circle at 18% 78%, var(--page-glow-c), transparent 24%),
+    linear-gradient(180deg, var(--bg), var(--bg-strong));
+  transition:
+    background 220ms ease,
+    color 220ms ease;
 }
 
 button,

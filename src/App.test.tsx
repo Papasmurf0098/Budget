@@ -12,7 +12,7 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    const startingAmount = screen.getByLabelText(/starting monthly amount/i)
+    const startingAmount = screen.getByLabelText(/expected monthly income/i)
     await user.clear(startingAmount)
     await user.type(startingAmount, '1000')
 

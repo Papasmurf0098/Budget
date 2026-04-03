@@ -146,7 +146,6 @@ export function deriveMonthSnapshot(data: BudgetData, monthKey: MonthKey): Month
   const bucketIds = new Set<string>([
     ...data.buckets.map((bucket) => bucket.id),
     ...Object.keys(monthPlan.bucketAllocations),
-    ...Object.keys(monthPlan.manualRollovers),
     ...expenses.map((expense) => expense.bucketId),
     ...activeBills.map((bill) => bill.bucketId),
   ])
@@ -163,15 +162,13 @@ export function deriveMonthSnapshot(data: BudgetData, monthKey: MonthKey): Month
         }
 
       const allocatedCents = monthPlan.bucketAllocations[bucketId] ?? 0
-      const rolloverCents = monthPlan.manualRollovers[bucketId] ?? 0
       const spentCents = spentByBucket.get(bucketId) ?? 0
 
       return {
         bucket,
         allocatedCents,
-        rolloverCents,
         spentCents,
-        remainingCents: allocatedCents + rolloverCents - spentCents,
+        remainingCents: allocatedCents - spentCents,
       }
     })
     .toSorted((left, right) => {
@@ -193,7 +190,7 @@ export function deriveMonthSnapshot(data: BudgetData, monthKey: MonthKey): Month
     totalSpentCents,
     requiredSpendCents,
     outstandingRequiredCents,
-    availableRemainingCents: monthPlan.startingAmountCents + totalIncomeCents - totalSpentCents,
+    availableRemainingCents: monthPlan.startingAmountCents - totalSpentCents,
   }
 }
 
@@ -539,7 +536,17 @@ export function toggleRecurringBillPaid(
 }
 
 export function buildExportPayload(data: BudgetData): string {
-  return JSON.stringify(data, null, 2)
+  return JSON.stringify(
+    {
+      ...data,
+      monthPlans: data.monthPlans.map((plan) => ({
+        ...plan,
+        manualRollovers: {},
+      })),
+    },
+    null,
+    2,
+  )
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -609,7 +616,7 @@ export function parseBudgetData(raw: unknown): BudgetData {
             monthKey: entry.monthKey,
             startingAmountCents: Math.round(entry.startingAmountCents),
             bucketAllocations: sanitizeNumericRecord(entry.bucketAllocations),
-            manualRollovers: sanitizeNumericRecord(entry.manualRollovers),
+            manualRollovers: {},
           } satisfies MonthPlan,
         ]
       })

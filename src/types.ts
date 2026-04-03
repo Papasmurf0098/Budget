@@ -65,7 +65,6 @@ export interface BudgetData {
 export interface BucketSummary {
   bucket: Bucket
   allocatedCents: number
-  rolloverCents: number
   spentCents: number
   remainingCents: number
 }

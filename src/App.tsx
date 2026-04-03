@@ -6,6 +6,7 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type ReactNode,
 } from 'react'
 import './App.css'
 import { BUCKET_COLORS } from './constants'
@@ -28,7 +29,6 @@ import {
   getMonthOptions,
   parseCurrencyInput,
   setBucketAllocation,
-  setBucketRollover,
   setStartingAmount,
   toggleRecurringBillPaid,
   updateBucket,
@@ -64,10 +64,15 @@ interface BucketDraft {
   color: string
 }
 
+type ThemeMode = 'light' | 'dark'
+type SectionKey = 'income' | 'expenses' | 'bills' | 'buckets'
+
 const enterAnimation = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0 },
 }
+
+const sectionKeys: SectionKey[] = ['income', 'expenses', 'bills', 'buckets']
 
 function buildExpenseDraft(bucketId: string, monthKey = getCurrentMonthKey()): ExpenseDraft {
   return {
@@ -112,10 +117,76 @@ function OverviewMetric({
   )
 }
 
+function getInitialTheme(): ThemeMode {
+  if (typeof window === 'undefined') {
+    return 'light'
+  }
+
+  return window.localStorage.getItem('budget-theme') === 'dark' ? 'dark' : 'light'
+}
+
+function createSectionState(value: boolean): Record<SectionKey, boolean> {
+  return {
+    income: value,
+    expenses: value,
+    bills: value,
+    buckets: value,
+  }
+}
+
+function SectionPanel({
+  eyebrow,
+  title,
+  description,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  isOpen: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <motion.section
+      className="panel"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.35 }}
+      variants={enterAnimation}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="section-heading">
+        <div className="section-heading__copy">
+          <p className="eyebrow">{eyebrow}</p>
+          <h3>{title}</h3>
+          <p className="support-copy">{description}</p>
+        </div>
+        <button
+          className="ghost-button section-toggle"
+          type="button"
+          aria-expanded={isOpen}
+          onClick={onToggle}
+        >
+          {isOpen ? 'Collapse' : 'Open'}
+        </button>
+      </div>
+
+      {isOpen ? <div className="section-content">{children}</div> : <p className="section-collapsed-note">Section collapsed.</p>}
+    </motion.section>
+  )
+}
+
 function App() {
   const [data, setData] = useState(loadBudgetData)
   const [selectedMonth, setSelectedMonth] = useState<MonthKey>(getCurrentMonthKey())
   const [message, setMessage] = useState('Budget saved locally on this device.')
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
+  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>(
+    createSectionState(true),
+  )
   const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null)
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
   const [editingBillId, setEditingBillId] = useState<string | null>(null)
@@ -143,6 +214,11 @@ function App() {
   useEffect(() => {
     saveBudgetData(data)
   }, [data])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('budget-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     if (!safeBucketOptions.some((bucket) => bucket.id === expenseDraft.bucketId)) {
@@ -356,8 +432,21 @@ function App() {
     return data.buckets.find((bucket) => bucket.id === bucketId)?.name ?? 'Unknown bucket'
   }
 
+  const allSectionsOpen = sectionKeys.every((key) => openSections[key])
+
+  function toggleSection(section: SectionKey) {
+    setOpenSections((current) => ({
+      ...current,
+      [section]: !current[section],
+    }))
+  }
+
+  function toggleAllSections() {
+    setOpenSections(createSectionState(!allSectionsOpen))
+  }
+
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-theme={theme}>
       <motion.header
         className="app-header"
         initial="hidden"
@@ -428,6 +517,30 @@ function App() {
               onChange={(event) => handleMonthChange(event.target.value as MonthKey)}
             />
           </label>
+          <div className="theme-switcher" role="group" aria-label="Color theme">
+            <button
+              className={`theme-switcher__option ${theme === 'light' ? 'theme-switcher__option--active' : ''}`}
+              type="button"
+              onClick={() => setTheme('light')}
+            >
+              Light
+            </button>
+            <button
+              className={`theme-switcher__option ${theme === 'dark' ? 'theme-switcher__option--active' : ''}`}
+              type="button"
+              onClick={() => setTheme('dark')}
+            >
+              Dark
+            </button>
+          </div>
+          <button
+            className="ghost-button"
+            type="button"
+            aria-label="Toggle all sections"
+            onClick={toggleAllSections}
+          >
+            {allSectionsOpen ? 'Collapse all sections' : 'Open all sections'}
+          </button>
           <button className="ghost-button" type="button" onClick={handleExport}>
             Export JSON
           </button>
@@ -458,13 +571,13 @@ function App() {
           <div>
             <p className="eyebrow">{getMonthLabel(selectedMonth)}</p>
             <h2>{formatCurrency(snapshot.availableRemainingCents)}</h2>
-            <p className="support-copy">Left after starting money, earned income, and logged spending.</p>
+            <p className="support-copy">Left in plan after expected income and logged spending.</p>
           </div>
 
           <label className="field field--compact">
-            <span>Starting monthly amount</span>
+            <span>Expected monthly income</span>
             <input
-              aria-label="Starting monthly amount"
+              aria-label="Expected monthly income"
               inputMode="decimal"
               type="text"
               value={formatCurrencyInput(snapshot.monthPlan.startingAmountCents)}
@@ -472,7 +585,7 @@ function App() {
                 const amountCents = parseCurrencyInput(event.target.value) ?? 0
                 commitData(
                   (current) => setStartingAmount(current, selectedMonth, amountCents),
-                  'Starting amount updated.',
+                  'Expected income updated.',
                 )
               }}
             />
@@ -480,6 +593,10 @@ function App() {
         </div>
 
         <div className="metric-grid">
+          <OverviewMetric
+            label="Expected income"
+            value={formatCurrency(snapshot.monthPlan.startingAmountCents)}
+          />
           <OverviewMetric
             label="Actual earned"
             value={formatCurrency(snapshot.totalIncomeCents)}
@@ -500,22 +617,13 @@ function App() {
       </motion.section>
 
       <main className="section-stack">
-        <motion.section
-          className="panel"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.35 }}
-          variants={enterAnimation}
-          transition={{ duration: 0.4 }}
+        <SectionPanel
+          eyebrow="Income"
+          title="Track money earned"
+          description="Log each paycheck or income source to see the actual total earned this month."
+          isOpen={openSections.income}
+          onToggle={() => toggleSection('income')}
         >
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Income</p>
-              <h3>Track money earned</h3>
-            </div>
-            <p className="support-copy">Log each paycheck or income source to see the actual total earned this month.</p>
-          </div>
-
           <form className="form-grid" onSubmit={handleAddIncome}>
             <label className="field">
               <span>Amount earned</span>
@@ -679,24 +787,15 @@ function App() {
             </AnimatePresence>
             {!snapshot.incomes.length ? <p className="empty-state">No income logged for this month yet.</p> : null}
           </div>
-        </motion.section>
+        </SectionPanel>
 
-        <motion.section
-          className="panel"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.35 }}
-          variants={enterAnimation}
-          transition={{ duration: 0.4 }}
+        <SectionPanel
+          eyebrow="Expenses"
+          title="Log spending"
+          description="Every save updates your month total and bucket balance instantly."
+          isOpen={openSections.expenses}
+          onToggle={() => toggleSection('expenses')}
         >
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Expenses</p>
-              <h3>Log spending</h3>
-            </div>
-            <p className="support-copy">Every save updates your month total and bucket balance instantly.</p>
-          </div>
-
           <form className="form-grid" onSubmit={handleAddExpense}>
             <label className="field">
               <span>Bucket</span>
@@ -907,24 +1006,15 @@ function App() {
             </AnimatePresence>
             {!snapshot.expenses.length ? <p className="empty-state">No expenses logged for this month yet.</p> : null}
           </div>
-        </motion.section>
+        </SectionPanel>
 
-        <motion.section
-          className="panel"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.35 }}
-          variants={enterAnimation}
-          transition={{ duration: 0.4 }}
+        <SectionPanel
+          eyebrow="Recurring bills"
+          title="Track required monthly spend"
+          description="Mark bills paid to create matching expense entries automatically."
+          isOpen={openSections.bills}
+          onToggle={() => toggleSection('bills')}
         >
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Recurring bills</p>
-              <h3>Track required monthly spend</h3>
-            </div>
-            <p className="support-copy">Mark bills paid to create matching expense entries automatically.</p>
-          </div>
-
           <form className="form-grid" onSubmit={handleAddBill}>
             <label className="field field--wide">
               <span>Bill name</span>
@@ -1132,24 +1222,15 @@ function App() {
             })}
             {!snapshot.billSummaries.length ? <p className="empty-state">No recurring bills yet.</p> : null}
           </div>
-        </motion.section>
+        </SectionPanel>
 
-        <motion.section
-          className="panel"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.35 }}
-          variants={enterAnimation}
-          transition={{ duration: 0.4 }}
+        <SectionPanel
+          eyebrow="Buckets"
+          title="Budget each category"
+          description="Set each bucket for the month, then watch spent and left update automatically."
+          isOpen={openSections.buckets}
+          onToggle={() => toggleSection('buckets')}
         >
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Buckets</p>
-              <h3>Budget each category</h3>
-            </div>
-            <p className="support-copy">Allocations and rollovers reset by month unless you enter a carryover amount.</p>
-          </div>
-
           <form
             className="bucket-create"
             onSubmit={(event) => {
@@ -1247,27 +1328,6 @@ function App() {
                         }
                       />
                     </label>
-                    <label className="field field--compact">
-                      <span>Rollover</span>
-                      <input
-                        aria-label={`${summary.bucket.name} rollover`}
-                        inputMode="decimal"
-                        type="text"
-                        value={formatCurrencyInput(summary.rolloverCents)}
-                        onChange={(event) =>
-                          commitData(
-                            (current) =>
-                              setBucketRollover(
-                                current,
-                                selectedMonth,
-                                summary.bucket.id,
-                                parseCurrencyInput(event.target.value) ?? 0,
-                              ),
-                            'Manual rollover updated.',
-                          )
-                        }
-                      />
-                    </label>
                     <div className="bucket-balance">
                       <span>Spent</span>
                       <strong>{formatCurrency(summary.spentCents)}</strong>
@@ -1300,7 +1360,7 @@ function App() {
               )
             })}
           </div>
-        </motion.section>
+        </SectionPanel>
       </main>
     </div>
   )

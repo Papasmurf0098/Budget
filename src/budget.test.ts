@@ -8,7 +8,6 @@ import {
   deriveMonthSnapshot,
   parseBudgetData,
   setBucketAllocation,
-  setBucketRollover,
   setStartingAmount,
   toggleRecurringBillPaid,
 } from './budget'
@@ -35,9 +34,9 @@ describe('budget calculations', () => {
     expect(foodBucket?.remainingCents).toBe(157_50)
   })
 
-  it('adds recorded income to the actual earned total and available balance', () => {
+  it('tracks recorded income separately from the expected monthly income plan', () => {
     let data = createInitialBudgetData('2026-04')
-    data = setStartingAmount(data, '2026-04', 100_00)
+    data = setStartingAmount(data, '2026-04', 1_000_00)
     data = addIncome(data, {
       monthKey: '2026-04',
       amountCents: 900_00,
@@ -81,10 +80,20 @@ describe('budget calculations', () => {
     expect(snapshot.billSummaries[0]?.state).toBe('paid')
   })
 
-  it('applies manual rollover to bucket remaining', () => {
+  it('ignores legacy manual rollover values when deriving bucket remaining', () => {
     let data = createInitialBudgetData('2026-04')
     data = setBucketAllocation(data, '2026-04', 'shopping', 150_00)
-    data = setBucketRollover(data, '2026-04', 'shopping', 25_00)
+    data = {
+      ...data,
+      monthPlans: data.monthPlans.map((plan) =>
+        plan.monthKey === '2026-04'
+          ? {
+              ...plan,
+              manualRollovers: { shopping: 25_00 },
+            }
+          : plan,
+      ),
+    }
     data = addExpense(data, {
       monthKey: '2026-04',
       bucketId: 'shopping',
@@ -97,7 +106,7 @@ describe('budget calculations', () => {
     const snapshot = deriveMonthSnapshot(data, '2026-04')
     const shoppingBucket = snapshot.bucketSummaries.find((bucket) => bucket.bucket.id === 'shopping')
 
-    expect(shoppingBucket?.remainingCents).toBe(135_00)
+    expect(shoppingBucket?.remainingCents).toBe(110_00)
   })
 
   it('validates imported data version and shape', () => {
