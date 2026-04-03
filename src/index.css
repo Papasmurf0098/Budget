@@ -9,27 +9,41 @@
   --accent-strong: #00b8ff;
   --success: #00c853;
   --danger: #f35f34;
-  --panel: rgba(243, 255, 254, 0.92);
-  --panel-soft: rgba(0, 255, 242, 0.16);
-  --edge: rgba(0, 132, 160, 0.22);
-  --edge-soft: rgba(255, 255, 255, 0.74);
+  --panel: linear-gradient(
+    145deg,
+    rgba(255, 251, 255, 0.96) 0%,
+    rgba(242, 235, 255, 0.94) 48%,
+    rgba(224, 217, 255, 0.92) 100%
+  );
+  --panel-card: linear-gradient(
+    145deg,
+    rgba(250, 244, 255, 0.84) 0%,
+    rgba(234, 239, 255, 0.76) 100%
+  );
+  --panel-soft: rgba(181, 163, 255, 0.18);
+  --edge: rgba(129, 104, 214, 0.22);
+  --edge-soft: rgba(255, 255, 255, 0.82);
   --shadow-strong: rgba(16, 35, 44, 0.16);
   --shadow-soft: rgba(16, 35, 44, 0.08);
   --hero-glow-a: rgba(0, 255, 242, 0.52);
   --hero-glow-b: rgba(243, 95, 52, 0.24);
-  --hero-surface-a: rgba(245, 255, 254, 0.98);
-  --hero-surface-b: rgba(168, 255, 245, 0.94);
+  --hero-surface-a: rgba(251, 245, 255, 0.98);
+  --hero-surface-b: rgba(205, 255, 246, 0.9);
   --graphic-surface-a: rgba(231, 255, 252, 0.96);
   --graphic-surface-b: rgba(94, 255, 235, 0.88);
   --graphic-halo: rgba(0, 255, 242, 0.9);
-  --graphic-ring: rgba(0, 195, 179, 0.28);
-  --graphic-ring-alt: rgba(243, 95, 52, 0.28);
+  --graphic-ring: rgba(124, 94, 223, 0.24);
+  --graphic-ring-alt: rgba(243, 95, 52, 0.24);
   --chip-bg: rgba(0, 255, 242, 0.14);
   --danger-soft: rgba(243, 95, 52, 0.14);
-  --field-bg: rgba(250, 255, 255, 0.98);
-  --focus-outline: rgba(0, 255, 242, 0.28);
-  --focus-border: rgba(0, 184, 255, 0.66);
-  --focus-shadow: rgba(0, 255, 242, 0.2);
+  --field-bg: linear-gradient(
+    180deg,
+    rgba(255, 251, 255, 0.98) 0%,
+    rgba(245, 239, 255, 0.95) 100%
+  );
+  --focus-outline: rgba(145, 114, 255, 0.24);
+  --focus-border: rgba(111, 83, 235, 0.58);
+  --focus-shadow: rgba(145, 114, 255, 0.16);
   --page-glow-a: rgba(0, 255, 242, 0.48);
   --page-glow-b: rgba(243, 95, 52, 0.2);
   --page-glow-c: rgba(0, 200, 83, 0.16);
@@ -45,7 +59,8 @@
   --accent-strong: #36d98a;
   --success: #36d98a;
   --danger: #ff7c73;
-  --panel: rgba(21, 24, 53, 0.84);
+  --panel: linear-gradient(145deg, rgba(21, 24, 53, 0.9), rgba(17, 27, 63, 0.82));
+  --panel-card: linear-gradient(145deg, rgba(38, 44, 90, 0.76), rgba(27, 35, 77, 0.68));
   --panel-soft: rgba(38, 44, 90, 0.72);
   --edge: rgba(137, 158, 255, 0.18);
   --edge-soft: rgba(255, 255, 255, 0.06);
@@ -62,7 +77,7 @@
   --graphic-ring-alt: rgba(113, 79, 255, 0.28);
   --chip-bg: rgba(54, 217, 138, 0.12);
   --danger-soft: rgba(255, 124, 115, 0.14);
-  --field-bg: rgba(14, 18, 43, 0.92);
+  --field-bg: linear-gradient(180deg, rgba(14, 18, 43, 0.96), rgba(10, 15, 38, 0.92));
   --focus-outline: rgba(90, 112, 255, 0.28);
   --focus-border: rgba(90, 112, 255, 0.58);
   --focus-shadow: rgba(90, 112, 255, 0.16);

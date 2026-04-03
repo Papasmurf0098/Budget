@@ -229,31 +229,6 @@
   opacity: 0.96;
 }
 
-.panel-graphic__shape {
-  position: absolute;
-  display: block;
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-.panel-graphic__scene {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  width: clamp(190px, 34vw, 290px);
-  height: clamp(140px, 24vw, 220px);
-}
-
-.panel-graphic__scene--graph,
-.panel-graphic__scene--planner,
-.panel-graphic__scene--calculator,
-.panel-graphic__scene--receipt,
-.panel-graphic__scene--invoice,
-.panel-graphic__scene--tray {
-  width: clamp(200px, 36vw, 310px);
-  height: clamp(150px, 25vw, 228px);
-}
-
 .panel-graphic--overview::before,
 .panel-graphic--reminders::before,
 .panel-graphic--income::before,
@@ -262,11 +237,11 @@
 .panel-graphic--buckets::before {
   content: '';
   position: absolute;
-  inset: auto -4% -10% auto;
-  width: clamp(180px, 34vw, 320px);
-  height: clamp(180px, 34vw, 320px);
+  inset: auto -10% -18% auto;
+  width: clamp(240px, 42vw, 420px);
+  height: clamp(240px, 42vw, 420px);
   border-radius: 999px;
-  opacity: 0.18;
+  opacity: 0.22;
 }
 
 .panel-graphic--overview::before {
@@ -293,368 +268,194 @@
   background: radial-gradient(circle, var(--graphic-halo), transparent 70%);
 }
 
-.panel-graphic__shape--graph-sheet {
-  inset: 12px 10px 10px 48px;
-  border-radius: 30px;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.3), transparent 85%);
-  box-shadow:
-    inset 0 0 0 1px var(--edge-soft),
-    0 18px 34px rgba(14, 34, 57, 0.1);
+.panel-graphic__watermark {
+  position: absolute;
+  inset: 2% -3% 0 2%;
+  background-image: url('./assets/finance-watermark.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.22;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
-.panel-graphic__shape--graph-grid {
-  inset: 40px 36px 34px 76px;
-  border-radius: 22px;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
-  background-size: 22px 22px;
-  opacity: 0.66;
-}
-
-.panel-graphic__shape--graph-line {
-  left: 94px;
-  bottom: 52px;
-  width: 142px;
-  height: 76px;
-  border-left: 3px solid transparent;
-  border-bottom: 3px solid transparent;
-  clip-path: polygon(0 88%, 20% 70%, 41% 78%, 60% 42%, 77% 56%, 100% 12%, 100% 100%, 0 100%);
-  background: linear-gradient(135deg, var(--success), var(--accent));
-  box-shadow: 0 0 22px rgba(0, 215, 188, 0.22);
-}
-
-.panel-graphic__shape--graph-dot {
-  right: 32px;
-  top: 34px;
-  width: 28px;
-  height: 28px;
+.panel-graphic__accent {
+  position: absolute;
+  display: block;
   border-radius: 999px;
-  background:
-    radial-gradient(circle at 34% 32%, rgba(255, 255, 255, 0.76), transparent 28%),
-    linear-gradient(145deg, var(--danger), var(--accent));
-  box-shadow: 0 0 24px var(--danger-soft);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
-.panel-graphic__shape--graph-tab {
-  left: 58px;
-  top: 18px;
-  width: 74px;
+.panel-graphic__accent--primary {
+  right: 24px;
+  top: 22px;
+  width: 78px;
+  height: 24px;
+  background: linear-gradient(90deg, var(--accent), rgba(255, 255, 255, 0));
+  opacity: 0.72;
+}
+
+.panel-graphic__accent--secondary {
+  right: 18px;
+  bottom: 18px;
+  width: 42px;
+  height: 42px;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.82), transparent 24%),
+    linear-gradient(145deg, var(--success), var(--accent));
+  box-shadow: 0 0 24px rgba(88, 122, 255, 0.14);
+}
+
+.panel-graphic--overview .panel-graphic__watermark {
+  inset: 0 -2% -6% 0;
+  opacity: 0.18;
+}
+
+.panel-graphic--overview .panel-graphic__accent--primary {
+  width: 64px;
   height: 18px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), transparent);
-}
-
-.panel-graphic__shape--planner-card {
-  inset: 8px 8px 8px 42px;
-  border-radius: 30px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.3), transparent 90%);
-  box-shadow:
-    inset 0 0 0 1px var(--edge-soft),
-    0 18px 34px rgba(16, 24, 58, 0.1);
-}
-
-.panel-graphic__shape--planner-binding {
-  left: 62px;
-  top: 8px;
-  width: 168px;
-  height: 26px;
-  border-radius: 18px 18px 10px 10px;
-  background: linear-gradient(180deg, var(--accent), transparent 160%);
-  opacity: 0.55;
-}
-
-.panel-graphic__shape--planner-rings {
-  left: 84px;
-  top: 6px;
-  width: 122px;
-  height: 34px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle, transparent 7px, rgba(255, 255, 255, 0.4) 8px, transparent 9px) 0 0 / 34px 34px repeat-x;
-  opacity: 0.86;
-}
-
-.panel-graphic__shape--planner-alert {
-  right: 14px;
+  right: 120px;
   top: 26px;
-  width: 62px;
-  height: 62px;
-  border-radius: 20px;
+}
+
+.panel-graphic--overview .panel-graphic__accent--secondary {
+  right: 34px;
+  top: 24px;
+  bottom: auto;
+  width: 26px;
+  height: 26px;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.82), transparent 24%),
+    linear-gradient(145deg, var(--danger), var(--success));
+}
+
+.panel-graphic--reminders .panel-graphic__watermark {
+  inset: 4% -5% -2% 4%;
+  opacity: 0.2;
+}
+
+.panel-graphic--reminders .panel-graphic__accent--primary {
+  width: 88px;
+  right: 48px;
+  top: 30px;
+  background: linear-gradient(90deg, var(--danger), rgba(255, 255, 255, 0));
+}
+
+.panel-graphic--reminders .panel-graphic__accent--secondary {
+  width: 48px;
+  height: 48px;
+  right: 32px;
+  top: 70px;
+  bottom: auto;
   background:
     radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.82), transparent 24%),
     linear-gradient(145deg, var(--danger), var(--accent));
-  box-shadow: 0 12px 24px rgba(250, 90, 60, 0.22);
 }
 
-.panel-graphic__shape--planner-lines {
-  left: 80px;
-  top: 58px;
-  width: 130px;
-  height: 92px;
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      transparent 0 10%,
-      rgba(255, 255, 255, 0.28) 10% 14%,
-      transparent 14% 34%,
-      rgba(255, 255, 255, 0.2) 34% 38%,
-      transparent 38% 58%,
-      rgba(255, 255, 255, 0.16) 58% 62%,
-      transparent 62% 82%,
-      rgba(255, 255, 255, 0.18) 82% 86%,
-      transparent 86%
-    );
-  opacity: 0.78;
+.panel-graphic--income .panel-graphic__watermark {
+  inset: 4% -4% -4% 2%;
+  opacity: 0.24;
 }
 
-.panel-graphic__shape--calc-body {
-  inset: 8px 24px 10px 54px;
-  border-radius: 30px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.32), transparent 85%);
-  box-shadow:
-    inset 0 0 0 1px var(--edge-soft),
-    0 18px 34px rgba(14, 34, 57, 0.12);
-}
-
-.panel-graphic__shape--calc-screen {
-  left: 82px;
-  top: 30px;
-  width: 132px;
-  height: 42px;
-  border-radius: 16px;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.1)),
-    linear-gradient(180deg, var(--chip-bg), transparent 170%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-}
-
-.panel-graphic__shape--calc-keys {
-  left: 82px;
-  top: 86px;
-  width: 136px;
-  height: 88px;
-  border-radius: 18px;
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.28) 0 8px, transparent 9px) 0 0 / 42px 30px repeat;
-  opacity: 0.86;
-}
-
-.panel-graphic__shape--calc-pencil {
-  right: 14px;
-  top: 34px;
-  width: 18px;
-  height: 136px;
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.86) 0 12%,
-      var(--danger) 12% 78%,
-      #f2c163 78% 94%,
-      #7a553d 94%
-    );
-  box-shadow: 0 10px 18px rgba(20, 20, 36, 0.16);
-}
-
-.panel-graphic__shape--calc-accent {
-  right: 34px;
-  bottom: 12px;
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.82), transparent 24%),
-    linear-gradient(145deg, var(--success), var(--accent));
-  box-shadow: 0 0 22px rgba(0, 206, 160, 0.22);
-}
-
-.panel-graphic__shape--receipt-paper {
-  inset: 6px 18px 12px 62px;
-  border-radius: 26px 26px 18px 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 24%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.2), transparent 86%);
-  box-shadow:
-    inset 0 0 0 1px var(--edge-soft),
-    0 18px 34px rgba(22, 28, 52, 0.12);
-  clip-path: polygon(0 0, 100% 0, 100% 88%, 94% 93%, 88% 88%, 82% 93%, 76% 88%, 70% 93%, 64% 88%, 58% 93%, 52% 88%, 46% 93%, 40% 88%, 34% 93%, 28% 88%, 22% 93%, 16% 88%, 10% 93%, 4% 88%, 0 91%);
-}
-
-.panel-graphic__shape--receipt-lines {
-  left: 96px;
-  top: 40px;
-  width: 124px;
-  height: 100px;
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.26) 0 6%,
-      transparent 6% 22%,
-      rgba(255, 255, 255, 0.18) 22% 26%,
-      transparent 26% 42%,
-      rgba(255, 255, 255, 0.18) 42% 46%,
-      transparent 46% 62%,
-      rgba(255, 255, 255, 0.18) 62% 66%,
-      transparent 66% 82%,
-      rgba(255, 255, 255, 0.18) 82% 86%,
-      transparent 86%
-    );
-}
-
-.panel-graphic__shape--receipt-total {
-  left: 130px;
-  bottom: 26px;
-  width: 86px;
+.panel-graphic--income .panel-graphic__accent--primary {
   height: 18px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--danger), transparent);
+  width: 92px;
+  right: 24px;
+  top: 44px;
+  background: linear-gradient(90deg, var(--accent-strong), rgba(255, 255, 255, 0));
 }
 
-.panel-graphic__shape--receipt-pen {
-  right: 22px;
+.panel-graphic--income .panel-graphic__accent--secondary {
+  width: 40px;
+  height: 112px;
+  right: 30px;
+  top: 42px;
+  bottom: auto;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--danger), #f2c163 78%, #7a553d 100%);
+}
+
+.panel-graphic--expenses .panel-graphic__watermark {
+  inset: 2% -2% -4% 2%;
+  opacity: 0.23;
+}
+
+.panel-graphic--expenses .panel-graphic__accent--primary {
+  width: 70px;
+  height: 16px;
+  right: 26px;
+  top: 62px;
+  background: linear-gradient(90deg, var(--danger), rgba(255, 255, 255, 0));
+}
+
+.panel-graphic--expenses .panel-graphic__accent--secondary {
+  width: 18px;
+  height: 116px;
+  right: 26px;
   top: 34px;
-  width: 14px;
-  height: 126px;
+  bottom: auto;
   border-radius: 999px;
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.7) 0 10%,
+      rgba(255, 255, 255, 0.72) 0 10%,
       var(--accent) 10% 78%,
       #f1f4ff 78% 90%,
       #30446c 90%
     );
-  box-shadow: 0 10px 18px rgba(20, 20, 36, 0.16);
 }
 
-.panel-graphic__shape--receipt-chip {
-  right: 6px;
-  top: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
+.panel-graphic--bills .panel-graphic__watermark {
+  inset: 3% -5% -4% 2%;
+  opacity: 0.22;
+}
+
+.panel-graphic--bills .panel-graphic__accent--primary {
+  width: 82px;
+  height: 82px;
+  right: 22px;
+  bottom: 20px;
+  top: auto;
+  border-radius: 24px;
   background:
-    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.82), transparent 24%),
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.82), transparent 24%),
     linear-gradient(145deg, var(--danger), var(--accent));
-  box-shadow: 0 0 22px rgba(255, 105, 79, 0.24);
 }
 
-.panel-graphic__shape--invoice-paper {
-  inset: 4px 22px 12px 56px;
-  border-radius: 28px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.32), transparent 88%);
-  box-shadow:
-    inset 0 0 0 1px var(--edge-soft),
-    0 18px 34px rgba(18, 24, 54, 0.12);
-}
-
-.panel-graphic__shape--invoice-fold {
-  right: 24px;
-  top: 4px;
-  width: 62px;
-  height: 62px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.44), transparent 68%);
-}
-
-.panel-graphic__shape--invoice-lines {
-  left: 90px;
-  top: 38px;
-  width: 132px;
-  height: 110px;
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.26) 0 5%,
-      transparent 5% 20%,
-      rgba(255, 255, 255, 0.18) 20% 24%,
-      transparent 24% 38%,
-      rgba(255, 255, 255, 0.18) 38% 42%,
-      transparent 42% 56%,
-      rgba(255, 255, 255, 0.18) 56% 60%,
-      transparent 60% 74%,
-      rgba(255, 255, 255, 0.18) 74% 78%,
-      transparent 78%
-    );
-}
-
-.panel-graphic__shape--invoice-stamp {
-  right: 4px;
-  bottom: 28px;
-  width: 74px;
-  height: 74px;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.8), transparent 24%),
-    linear-gradient(145deg, var(--danger), var(--accent));
-  box-shadow: 0 14px 24px rgba(255, 95, 72, 0.2);
-}
-
-.panel-graphic__shape--invoice-pin {
+.panel-graphic--bills .panel-graphic__accent--secondary {
+  width: 26px;
+  height: 26px;
   left: 72px;
-  top: 18px;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: var(--success);
-  box-shadow: 0 0 18px rgba(0, 208, 152, 0.28);
+  top: 24px;
+  right: auto;
+  bottom: auto;
+  background: linear-gradient(145deg, var(--success), var(--accent));
 }
 
-.panel-graphic__shape--tray-base {
-  left: 54px;
-  right: 18px;
-  bottom: 18px;
-  height: 94px;
-  border-radius: 24px 24px 30px 30px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 80%);
-  box-shadow:
-    inset 0 0 0 1px var(--edge-soft),
-    0 16px 28px rgba(16, 28, 56, 0.12);
+.panel-graphic--buckets .panel-graphic__watermark {
+  inset: 2% -4% -6% 0;
+  opacity: 0.24;
 }
 
-.panel-graphic__shape--tray-card-one {
-  left: 84px;
-  top: 12px;
-  width: 96px;
-  height: 122px;
-  border-radius: 22px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.3), transparent 86%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-}
-
-.panel-graphic__shape--tray-card-two {
-  left: 146px;
-  top: 28px;
-  width: 92px;
-  height: 110px;
-  border-radius: 22px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.22), transparent 88%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-}
-
-.panel-graphic__shape--tray-coin {
-  right: 8px;
+.panel-graphic--buckets .panel-graphic__accent--primary {
+  width: 56px;
+  height: 56px;
+  right: 28px;
   top: 34px;
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
   background:
     radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.82), transparent 24%),
     linear-gradient(145deg, var(--success), var(--accent));
-  box-shadow: 0 0 24px rgba(0, 210, 170, 0.24);
 }
 
-.panel-graphic__shape--tray-tab {
-  left: 64px;
-  bottom: 20px;
-  width: 62px;
+.panel-graphic--buckets .panel-graphic__accent--secondary {
+  width: 74px;
   height: 18px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--danger), transparent);
+  left: 64px;
+  bottom: 22px;
+  right: auto;
+  background: linear-gradient(90deg, var(--danger), rgba(255, 255, 255, 0));
 }
 
 .reminder-controls,
@@ -672,7 +473,7 @@
   gap: 12px;
   padding: 16px;
   border-radius: 20px;
-  background: var(--panel-soft);
+  background: var(--panel-card);
   box-shadow: inset 0 0 0 1px var(--edge);
 }
 
@@ -712,7 +513,7 @@
 .metric {
   padding: 14px 16px;
   border-radius: 18px;
-  background: var(--panel-soft);
+  background: var(--panel-card);
   box-shadow: inset 0 0 0 1px var(--edge);
 }
 
@@ -917,7 +718,7 @@
   gap: 14px;
   padding: 16px;
   border-radius: 20px;
-  background: var(--panel-soft);
+  background: var(--panel-card);
   box-shadow: inset 0 0 0 1px var(--edge);
 }
 
@@ -1075,10 +876,9 @@
     opacity: 0.84;
   }
 
-  .panel-graphic__scene {
-    right: -8px;
-    width: clamp(180px, 52vw, 250px);
-    height: clamp(132px, 42vw, 190px);
+  .panel-graphic__watermark {
+    inset: 8% -18% -6% 8%;
+    opacity: 0.18;
   }
 
   .section-heading__copy,
@@ -1088,7 +888,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel-graphic__shape {
+  .panel-graphic__watermark,
+  .panel-graphic__accent {
     will-change: auto;
   }
 }
