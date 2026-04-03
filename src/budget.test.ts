@@ -5,11 +5,14 @@ import {
   addIncome,
   addRecurringBill,
   createInitialBudgetData,
+  deriveUpcomingReminders,
+  dismissReminderForDay,
   deriveMonthSnapshot,
   parseBudgetData,
   setBucketAllocation,
   setStartingAmount,
   toggleRecurringBillPaid,
+  updateReminderSettings,
 } from './budget'
 
 describe('budget calculations', () => {
@@ -133,5 +136,106 @@ describe('budget calculations', () => {
     })
 
     expect(data.buckets.some((bucket) => bucket.name === 'Travel')).toBe(true)
+  })
+
+  it('derives a reminder for a bill due tomorrow when the window is one day', () => {
+    const now = new Date('2026-04-10T12:00:00')
+    let data = createInitialBudgetData('2026-04')
+    data = addRecurringBill(data, {
+      name: 'Internet',
+      amountCents: 70_00,
+      bucketId: 'utilities',
+      dueDay: 11,
+    })
+
+    const reminders = deriveUpcomingReminders(data, now)
+
+    expect(reminders).toHaveLength(1)
+    expect(reminders[0]?.daysUntilDue).toBe(1)
+  })
+
+  it('respects a three-day reminder window and skips dates outside it', () => {
+    const now = new Date('2026-04-10T12:00:00')
+    let data = createInitialBudgetData('2026-04')
+    data = updateReminderSettings(data, { remindDaysBefore: 3 })
+    data = addRecurringBill(data, {
+      name: 'Phone',
+      amountCents: 45_00,
+      bucketId: 'utilities',
+      dueDay: 13,
+    })
+    data = addRecurringBill(data, {
+      name: 'Rent',
+      amountCents: 900_00,
+      bucketId: 'housing',
+      dueDay: 15,
+    })
+
+    const reminders = deriveUpcomingReminders(data, now)
+
+    expect(reminders.map((reminder) => reminder.bill.name)).toEqual(['Phone'])
+  })
+
+  it('does not remind for paid or inactive recurring bills', () => {
+    const now = new Date('2026-04-10T12:00:00')
+    let data = createInitialBudgetData('2026-04')
+    data = addRecurringBill(data, {
+      name: 'Water',
+      amountCents: 30_00,
+      bucketId: 'utilities',
+      dueDay: 10,
+    })
+    data = addRecurringBill(data, {
+      name: 'Gym',
+      amountCents: 25_00,
+      bucketId: 'life',
+      dueDay: 10,
+    })
+    const [waterBillId, gymBillId] = data.recurringBills.map((bill) => bill.id)
+    data = toggleRecurringBillPaid(data, waterBillId, '2026-04')
+    data = {
+      ...data,
+      recurringBills: data.recurringBills.map((bill) =>
+        bill.id === gymBillId ? { ...bill, active: false } : bill,
+      ),
+    }
+
+    const reminders = deriveUpcomingReminders(data, now)
+
+    expect(reminders).toHaveLength(0)
+  })
+
+  it('carries reminders into the next month when the current month due date already passed', () => {
+    const now = new Date('2026-04-30T12:00:00')
+    let data = createInitialBudgetData('2026-04')
+    data = updateReminderSettings(data, { remindDaysBefore: 3 })
+    data = addRecurringBill(data, {
+      name: 'Insurance',
+      amountCents: 120_00,
+      bucketId: 'life',
+      dueDay: 2,
+    })
+
+    const reminders = deriveUpcomingReminders(data, now)
+
+    expect(reminders).toHaveLength(1)
+    expect(reminders[0]?.monthKey).toBe('2026-05')
+    expect(reminders[0]?.daysUntilDue).toBe(2)
+  })
+
+  it('suppresses reminders that were dismissed for the current day', () => {
+    const now = new Date('2026-04-10T12:00:00')
+    let data = createInitialBudgetData('2026-04')
+    data = addRecurringBill(data, {
+      name: 'Internet',
+      amountCents: 70_00,
+      bucketId: 'utilities',
+      dueDay: 10,
+    })
+
+    const firstReminder = deriveUpcomingReminders(data, now)[0]
+    data = dismissReminderForDay(data, firstReminder.id, '2026-04-10')
+
+    expect(deriveUpcomingReminders(data, now)).toHaveLength(0)
   })
 })

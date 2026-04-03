@@ -1,11 +1,15 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { parseBudgetData } from './budget'
+import * as storage from './storage'
+import type { BudgetData } from './types'
 
 describe('App', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    vi.restoreAllMocks()
   })
 
   it('updates totals when adding an expense', async () => {
@@ -68,7 +72,7 @@ describe('App', () => {
     render(<App />)
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    const payload = JSON.stringify({
+    const importedData = parseBudgetData({
       version: 2,
       buckets: [{ id: 'food', name: 'Food', color: '#ff7a59', archived: false }],
       monthPlans: [],
@@ -77,13 +81,200 @@ describe('App', () => {
       recurringBills: [],
       billMonthStates: [],
     })
-    const file = new File([payload], 'budget.json', { type: 'application/json' })
-    Object.defineProperty(file, 'text', {
-      value: async () => payload,
-    })
+    const file = new File(['{}'], 'budget.json', { type: 'application/json' })
+    vi.spyOn(storage, 'readImportedBudgetFile').mockResolvedValue(importedData as BudgetData)
 
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    expect(await screen.findByText(/budget imported successfully/i)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('status')
+          .some((node) => node.textContent?.match(/budget imported successfully/i)),
+      ).toBe(true),
+    )
+  })
+
+  it('shows a reminder banner for a recurring bill inside the current reminder window', async () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    vi.spyOn(storage, 'loadBudgetData').mockReturnValue(
+      parseBudgetData({
+        version: 2,
+        buckets: [{ id: 'utilities', name: 'Utilities', color: '#ff7a59', archived: false }],
+        monthPlans: [],
+        incomes: [],
+        expenses: [],
+        recurringBills: [
+          {
+            id: 'bill-1',
+            name: 'Internet',
+            amountCents: 75_00,
+            bucketId: 'utilities',
+            dueDay: tomorrow.getDate(),
+            active: true,
+          },
+        ],
+        billMonthStates: [],
+        reminderSettings: {
+          remindersEnabled: true,
+          browserNotificationsEnabled: false,
+          remindDaysBefore: 1,
+        },
+        reminderState: {
+          dismissedDayByReminder: {},
+          notifiedDayByReminder: {},
+        },
+      }),
+    )
+
+    render(<App />)
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('button', { name: /dismiss internet reminder for today/i })[0],
+      ).toBeInTheDocument(),
+    )
+  })
+
+  it('updates visible reminders when the timing window changes', async () => {
+    const user = userEvent.setup()
+    const inThreeDays = new Date()
+    inThreeDays.setDate(inThreeDays.getDate() + 3)
+
+    vi.spyOn(storage, 'loadBudgetData').mockReturnValue(
+      parseBudgetData({
+        version: 2,
+        buckets: [{ id: 'utilities', name: 'Utilities', color: '#ff7a59', archived: false }],
+        monthPlans: [],
+        incomes: [],
+        expenses: [],
+        recurringBills: [
+          {
+            id: 'bill-1',
+            name: 'Phone',
+            amountCents: 55_00,
+            bucketId: 'utilities',
+            dueDay: inThreeDays.getDate(),
+            active: true,
+          },
+        ],
+        billMonthStates: [],
+        reminderSettings: {
+          remindersEnabled: true,
+          browserNotificationsEnabled: false,
+          remindDaysBefore: 1,
+        },
+        reminderState: {
+          dismissedDayByReminder: {},
+          notifiedDayByReminder: {},
+        },
+      }),
+    )
+
+    render(<App />)
+
+    expect(screen.queryByRole('button', { name: /dismiss phone reminder for today/i })).not.toBeInTheDocument()
+    await user.selectOptions(screen.getAllByLabelText(/reminder timing/i)[0], '3')
+    expect(
+      screen
+        .getAllByRole('status')
+        .some((node) => node.textContent?.match(/reminder timing updated/i)),
+    ).toBe(true)
+  })
+
+  it('falls back to in-app reminders when notification permission is denied', async () => {
+    const user = userEvent.setup()
+    const requestPermission = vi.fn().mockResolvedValue('denied')
+    const notificationMock = {
+      permission: 'default',
+      requestPermission,
+    }
+    vi.stubGlobal('Notification', notificationMock)
+    const today = new Date()
+
+    vi.spyOn(storage, 'loadBudgetData').mockReturnValue(
+      parseBudgetData({
+        version: 2,
+        buckets: [{ id: 'utilities', name: 'Utilities', color: '#ff7a59', archived: false }],
+        monthPlans: [],
+        incomes: [],
+        expenses: [],
+      recurringBills: [
+        {
+            id: 'bill-1',
+            name: 'Internet',
+            amountCents: 75_00,
+            bucketId: 'utilities',
+            dueDay: today.getDate(),
+            active: true,
+          },
+        ],
+      billMonthStates: [],
+      reminderSettings: {
+        remindersEnabled: true,
+        browserNotificationsEnabled: false,
+        remindDaysBefore: 1,
+      },
+      reminderState: {
+          dismissedDayByReminder: {},
+          notifiedDayByReminder: {},
+        },
+      }),
+    )
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /enable browser notifications/i }))
+
+    expect(requestPermission).toHaveBeenCalled()
+    expect(screen.getByText(/notifications are blocked/i)).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('button', { name: /dismiss internet reminder for today/i })[0],
+    ).toBeInTheDocument()
+  })
+
+  it('dismisses a reminder for the rest of the current day', async () => {
+    const user = userEvent.setup()
+    const today = new Date()
+
+    vi.spyOn(storage, 'loadBudgetData').mockReturnValue(
+      parseBudgetData({
+        version: 2,
+        buckets: [{ id: 'utilities', name: 'Utilities', color: '#ff7a59', archived: false }],
+        monthPlans: [],
+        incomes: [],
+        expenses: [],
+        recurringBills: [
+          {
+            id: 'bill-1',
+            name: 'Internet',
+            amountCents: 75_00,
+            bucketId: 'utilities',
+            dueDay: today.getDate(),
+            active: true,
+          },
+        ],
+        billMonthStates: [],
+        reminderSettings: {
+          remindersEnabled: true,
+          browserNotificationsEnabled: false,
+          remindDaysBefore: 1,
+        },
+        reminderState: {
+          dismissedDayByReminder: {},
+          notifiedDayByReminder: {},
+        },
+      }),
+    )
+
+    render(<App />)
+    await user.click(screen.getAllByRole('button', { name: /dismiss internet reminder for today/i })[0])
+
+    expect(
+      screen
+        .getAllByRole('status')
+        .some((node) => node.textContent?.match(/reminder dismissed for today/i)),
+    ).toBe(true)
   })
 })

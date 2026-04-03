@@ -11,7 +11,11 @@ import type {
   MonthSnapshot,
   RecurringBill,
   RecurringBillMonthState,
+  ReminderSettings,
+  UpcomingReminder,
 } from './types'
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -24,6 +28,19 @@ const monthLabelFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
+const reminderDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+})
+
+export function createDefaultReminderSettings(): ReminderSettings {
+  return {
+    remindersEnabled: true,
+    browserNotificationsEnabled: false,
+    remindDaysBefore: 1,
+  }
+}
+
 export function createInitialBudgetData(monthKey = getCurrentMonthKey()): BudgetData {
   return {
     version: DATA_VERSION,
@@ -33,6 +50,11 @@ export function createInitialBudgetData(monthKey = getCurrentMonthKey()): Budget
     expenses: [],
     recurringBills: [],
     billMonthStates: [],
+    reminderSettings: createDefaultReminderSettings(),
+    reminderState: {
+      dismissedDayByReminder: {},
+      notifiedDayByReminder: {},
+    },
   }
 }
 
@@ -56,6 +78,13 @@ export function createMonthDate(monthKey: MonthKey, day: number): string {
 
 export function getMonthLabel(monthKey: MonthKey): string {
   return monthLabelFormatter.format(new Date(`${monthKey}-01T12:00:00`))
+}
+
+export function getCurrentLocalDayKey(date = new Date()): string {
+  const year = String(date.getFullYear())
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export function getMonthPlan(data: BudgetData, monthKey: MonthKey): MonthPlan {
@@ -218,6 +247,53 @@ export function setStartingAmount(
     ...monthPlan,
     startingAmountCents,
   })
+}
+
+export function updateReminderSettings(
+  data: BudgetData,
+  patch: Partial<ReminderSettings>,
+): BudgetData {
+  return {
+    ...data,
+    reminderSettings: {
+      ...data.reminderSettings,
+      ...patch,
+    },
+  }
+}
+
+export function dismissReminderForDay(
+  data: BudgetData,
+  reminderId: string,
+  dayKey: string,
+): BudgetData {
+  return {
+    ...data,
+    reminderState: {
+      ...data.reminderState,
+      dismissedDayByReminder: {
+        ...data.reminderState.dismissedDayByReminder,
+        [reminderId]: dayKey,
+      },
+    },
+  }
+}
+
+export function markReminderNotified(
+  data: BudgetData,
+  reminderId: string,
+  dayKey: string,
+): BudgetData {
+  return {
+    ...data,
+    reminderState: {
+      ...data.reminderState,
+      notifiedDayByReminder: {
+        ...data.reminderState.notifiedDayByReminder,
+        [reminderId]: dayKey,
+      },
+    },
+  }
 }
 
 export function setBucketAllocation(
@@ -734,6 +810,40 @@ export function parseBudgetData(raw: unknown): BudgetData {
       })
     : []
 
+  const reminderSettings =
+    isRecord(raw.reminderSettings) &&
+    typeof raw.reminderSettings.remindersEnabled === 'boolean' &&
+    typeof raw.reminderSettings.browserNotificationsEnabled === 'boolean' &&
+    (raw.reminderSettings.remindDaysBefore === 0 ||
+      raw.reminderSettings.remindDaysBefore === 1 ||
+      raw.reminderSettings.remindDaysBefore === 3 ||
+      raw.reminderSettings.remindDaysBefore === 7)
+      ? {
+          remindersEnabled: raw.reminderSettings.remindersEnabled,
+          browserNotificationsEnabled: raw.reminderSettings.browserNotificationsEnabled,
+          remindDaysBefore: raw.reminderSettings.remindDaysBefore as ReminderSettings['remindDaysBefore'],
+        }
+      : createDefaultReminderSettings()
+
+  const reminderState =
+    isRecord(raw.reminderState)
+      ? {
+          dismissedDayByReminder: Object.fromEntries(
+            Object.entries(isRecord(raw.reminderState.dismissedDayByReminder) ? raw.reminderState.dismissedDayByReminder : {}).flatMap(
+              ([key, value]) => (typeof value === 'string' ? [[key, value]] : []),
+            ),
+          ),
+          notifiedDayByReminder: Object.fromEntries(
+            Object.entries(isRecord(raw.reminderState.notifiedDayByReminder) ? raw.reminderState.notifiedDayByReminder : {}).flatMap(
+              ([key, value]) => (typeof value === 'string' ? [[key, value]] : []),
+            ),
+          ),
+        }
+      : {
+          dismissedDayByReminder: {},
+          notifiedDayByReminder: {},
+        }
+
   if (!buckets.length) {
     throw new Error('Import file does not include any buckets.')
   }
@@ -746,5 +856,84 @@ export function parseBudgetData(raw: unknown): BudgetData {
     expenses,
     recurringBills,
     billMonthStates,
+    reminderSettings,
+    reminderState,
   }
+}
+
+function getClampedDueDate(year: number, monthIndex: number, dueDay: number): Date {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate()
+  return new Date(year, monthIndex, Math.min(lastDay, Math.max(1, dueDay)), 12)
+}
+
+function getLocalMonthKey(date: Date): MonthKey {
+  const year = String(date.getFullYear())
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}` as MonthKey
+}
+
+function getDayStamp(date: Date): number {
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS
+}
+
+export function deriveUpcomingReminders(
+  data: BudgetData,
+  now = new Date(),
+): UpcomingReminder[] {
+  if (!data.reminderSettings.remindersEnabled) {
+    return []
+  }
+
+  const todayKey = getCurrentLocalDayKey(now)
+  const todayStamp = getDayStamp(now)
+
+  return data.recurringBills
+    .filter((bill) => bill.active)
+    .map((bill) => {
+      const currentMonthDue = getClampedDueDate(now.getFullYear(), now.getMonth(), bill.dueDay)
+      const dueDate =
+        getDayStamp(currentMonthDue) >= todayStamp
+          ? currentMonthDue
+          : getClampedDueDate(now.getFullYear(), now.getMonth() + 1, bill.dueDay)
+      const monthKey = getLocalMonthKey(dueDate)
+      const reminderId = `${bill.id}:${monthKey}`
+      const daysUntilDue = getDayStamp(dueDate) - todayStamp
+      const isPaid =
+        data.billMonthStates.find(
+          (state) => state.billId === bill.id && state.monthKey === monthKey,
+        )?.status === 'paid'
+      const dismissedToday = data.reminderState.dismissedDayByReminder[reminderId] === todayKey
+
+      return {
+        id: reminderId,
+        bill,
+        monthKey,
+        dueDate: dueDate.toISOString(),
+        dueLabel: reminderDateFormatter.format(dueDate),
+        daysUntilDue,
+        isPaid,
+        dismissedToday,
+      }
+    })
+    .filter(
+      (reminder) =>
+        reminder.daysUntilDue >= 0 &&
+        reminder.daysUntilDue <= data.reminderSettings.remindDaysBefore &&
+        !reminder.isPaid &&
+        !reminder.dismissedToday,
+    )
+    .map((reminder) => ({
+      id: reminder.id,
+      bill: reminder.bill,
+      monthKey: reminder.monthKey,
+      dueDate: reminder.dueDate,
+      dueLabel: reminder.dueLabel,
+      daysUntilDue: reminder.daysUntilDue,
+    }))
+    .toSorted(
+      (left, right) =>
+        left.daysUntilDue - right.daysUntilDue ||
+        left.bill.dueDay - right.bill.dueDay ||
+        left.bill.name.localeCompare(right.bill.name),
+    )
 }

@@ -60,6 +60,19 @@ export interface BudgetData {
   expenses: Expense[]
   recurringBills: RecurringBill[]
   billMonthStates: RecurringBillMonthState[]
+  reminderSettings: ReminderSettings
+  reminderState: ReminderState
+}
+
+export interface ReminderSettings {
+  remindersEnabled: boolean
+  browserNotificationsEnabled: boolean
+  remindDaysBefore: 0 | 1 | 3 | 7
+}
+
+export interface ReminderState {
+  dismissedDayByReminder: Record<string, string>
+  notifiedDayByReminder: Record<string, string>
 }
 
 export interface BucketSummary {
@@ -86,4 +99,13 @@ export interface MonthSnapshot {
   requiredSpendCents: number
   outstandingRequiredCents: number
   availableRemainingCents: number
+}
+
+export interface UpcomingReminder {
+  id: string
+  bill: RecurringBill
+  monthKey: MonthKey
+  dueDate: string
+  dueLabel: string
+  daysUntilDue: number
 }

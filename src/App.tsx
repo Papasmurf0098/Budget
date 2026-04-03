@@ -18,19 +18,24 @@ import {
   archiveBucket,
   buildExportPayload,
   createMonthDate,
+  deriveUpcomingReminders,
+  dismissReminderForDay,
   deleteExpense,
   deleteIncome,
   deriveMonthSnapshot,
   formatCurrency,
   formatCurrencyInput,
+  getCurrentLocalDayKey,
   getCurrentMonthKey,
   getDefaultBucketId,
   getMonthLabel,
   getMonthOptions,
+  markReminderNotified,
   parseCurrencyInput,
   setBucketAllocation,
   setStartingAmount,
   toggleRecurringBillPaid,
+  updateReminderSettings,
   updateBucket,
   updateExpense,
   updateIncome,
@@ -73,6 +78,7 @@ const enterAnimation = {
 }
 
 const sectionKeys: SectionKey[] = ['income', 'expenses', 'bills', 'buckets']
+const reminderDayOptions = [0, 1, 3, 7] as const
 
 function buildExpenseDraft(bucketId: string, monthKey = getCurrentMonthKey()): ExpenseDraft {
   return {
@@ -184,6 +190,9 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState<MonthKey>(getCurrentMonthKey())
   const [message, setMessage] = useState('Budget saved locally on this device.')
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    typeof Notification === 'undefined' ? 'denied' : Notification.permission,
+  )
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>(
     createSectionState(true),
   )
@@ -197,6 +206,7 @@ function App() {
   const safeBucketOptions = bucketOptions.length ? bucketOptions : data.buckets
   const snapshot = deriveMonthSnapshot(data, selectedMonth)
   const monthOptions = getMonthOptions(data)
+  const upcomingReminders = deriveUpcomingReminders(data)
 
   const [incomeDraft, setIncomeDraft] = useState<IncomeDraft>(() => buildIncomeDraft())
   const [incomeEdits, setIncomeEdits] = useState<Record<string, IncomeDraft>>({})
@@ -221,6 +231,23 @@ function App() {
   }, [theme])
 
   useEffect(() => {
+    if (typeof Notification === 'undefined') {
+      return
+    }
+
+    const refreshPermission = () => setNotificationPermission(Notification.permission)
+    refreshPermission()
+
+    document.addEventListener('visibilitychange', refreshPermission)
+    window.addEventListener('focus', refreshPermission)
+
+    return () => {
+      document.removeEventListener('visibilitychange', refreshPermission)
+      window.removeEventListener('focus', refreshPermission)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!safeBucketOptions.some((bucket) => bucket.id === expenseDraft.bucketId)) {
       setExpenseDraft((current) => ({ ...current, bucketId: defaultBucketId }))
     }
@@ -229,6 +256,48 @@ function App() {
       setBillDraft((current) => ({ ...current, bucketId: defaultBucketId }))
     }
   }, [billDraft.bucketId, defaultBucketId, expenseDraft.bucketId, safeBucketOptions])
+
+  useEffect(() => {
+    if (
+      typeof Notification === 'undefined' ||
+      notificationPermission !== 'granted' ||
+      !data.reminderSettings.remindersEnabled ||
+      !data.reminderSettings.browserNotificationsEnabled ||
+      document.visibilityState !== 'visible'
+    ) {
+      return
+    }
+
+    const todayKey = getCurrentLocalDayKey()
+    const pendingNotifications = upcomingReminders.filter(
+      (reminder) => data.reminderState.notifiedDayByReminder[reminder.id] !== todayKey,
+    )
+
+    if (!pendingNotifications.length) {
+      return
+    }
+
+    pendingNotifications.forEach((reminder) => {
+      const prefix = reminder.daysUntilDue === 0 ? 'Due today' : `Due in ${reminder.daysUntilDue} day${reminder.daysUntilDue === 1 ? '' : 's'}`
+      new Notification(prefix, {
+        body: `${reminder.bill.name} • ${formatCurrency(reminder.bill.amountCents)} • ${reminder.dueLabel}`,
+        tag: reminder.id,
+      })
+    })
+
+    setData((current) =>
+      pendingNotifications.reduce(
+        (nextData, reminder) => markReminderNotified(nextData, reminder.id, todayKey),
+        current,
+      ),
+    )
+  }, [
+    data.reminderSettings.browserNotificationsEnabled,
+    data.reminderSettings.remindersEnabled,
+    data.reminderState.notifiedDayByReminder,
+    notificationPermission,
+    upcomingReminders,
+  ])
 
   function commitData(updater: (current: typeof data) => typeof data, successMessage: string) {
     setData((current) => updater(current))
@@ -432,6 +501,26 @@ function App() {
     return data.buckets.find((bucket) => bucket.id === bucketId)?.name ?? 'Unknown bucket'
   }
 
+  async function handleEnableBrowserNotifications() {
+    if (typeof Notification === 'undefined') {
+      setMessage('Browser notifications are not supported on this device.')
+      return
+    }
+
+    const permission = await Notification.requestPermission()
+    setNotificationPermission(permission)
+
+    if (permission === 'granted') {
+      commitData(
+        (current) => updateReminderSettings(current, { browserNotificationsEnabled: true }),
+        'Browser notifications enabled while the app is open.',
+      )
+      return
+    }
+
+    setMessage('Browser notifications were not enabled. In-app reminders still work.')
+  }
+
   const allSectionsOpen = sectionKeys.every((key) => openSections[key])
 
   function toggleSection(section: SectionKey) {
@@ -559,6 +648,139 @@ function App() {
           </p>
         </div>
       </motion.header>
+
+      <motion.section
+        className="reminder-panel"
+        initial="hidden"
+        animate="visible"
+        variants={enterAnimation}
+        transition={{ delay: 0.04, duration: 0.42, ease: 'easeOut' }}
+      >
+        <div className="section-heading reminder-panel__heading">
+          <div className="section-heading__copy">
+            <p className="eyebrow">Reminders</p>
+            <h3>Keep upcoming bills in view.</h3>
+            <p className="support-copy">
+              These reminders stay local to this device. Browser notifications only fire while the app is open.
+            </p>
+          </div>
+        </div>
+
+        <div className="reminder-controls">
+          <label className="field field--compact checkbox-field">
+            <span>In-app reminders</span>
+            <input
+              aria-label="Enable reminders"
+              type="checkbox"
+              checked={data.reminderSettings.remindersEnabled}
+              onChange={(event) =>
+                commitData(
+                  (current) =>
+                    updateReminderSettings(current, {
+                      remindersEnabled: event.target.checked,
+                    }),
+                  event.target.checked ? 'In-app reminders enabled.' : 'In-app reminders disabled.',
+                )
+              }
+            />
+          </label>
+          <label className="field field--compact">
+            <span>Remind me</span>
+            <select
+              aria-label="Reminder timing"
+              value={String(data.reminderSettings.remindDaysBefore)}
+              onChange={(event) =>
+                commitData(
+                  (current) =>
+                    updateReminderSettings(current, {
+                      remindDaysBefore: Number(event.target.value) as (typeof reminderDayOptions)[number],
+                    }),
+                  'Reminder timing updated.',
+                )
+              }
+            >
+              {reminderDayOptions.map((days) => (
+                <option key={days} value={days}>
+                  {days === 0 ? 'On due day' : `${days} day${days === 1 ? '' : 's'} before`}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {typeof Notification === 'undefined' ? (
+            <p className="reminder-note">Browser notifications are not supported on this device.</p>
+          ) : notificationPermission === 'granted' ? (
+            <label className="field field--compact checkbox-field">
+              <span>Browser notifications</span>
+              <input
+                aria-label="Enable browser notifications"
+                type="checkbox"
+                checked={data.reminderSettings.browserNotificationsEnabled}
+                onChange={(event) =>
+                  commitData(
+                    (current) =>
+                      updateReminderSettings(current, {
+                        browserNotificationsEnabled: event.target.checked,
+                      }),
+                    event.target.checked
+                      ? 'Browser notifications enabled while the app is open.'
+                      : 'Browser notifications turned off.',
+                  )
+                }
+              />
+            </label>
+          ) : (
+            <div className="reminder-optin">
+              <button className="ghost-button" type="button" onClick={() => void handleEnableBrowserNotifications()}>
+                Enable browser notifications
+              </button>
+              {notificationPermission === 'denied' ? (
+                <p className="reminder-note">Notifications are blocked in this browser, so reminders will stay in-app only.</p>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        {data.reminderSettings.remindersEnabled ? (
+          <div className="reminder-list">
+            {upcomingReminders.length ? (
+              upcomingReminders.map((reminder) => (
+                <article key={reminder.id} className="reminder-card">
+                  <div>
+                    <strong>{reminder.bill.name}</strong>
+                    <div className="list-row__meta">
+                      <span>{reminder.daysUntilDue === 0 ? 'Due today' : `Due in ${reminder.daysUntilDue} day${reminder.daysUntilDue === 1 ? '' : 's'}`}</span>
+                      <span>{reminder.dueLabel}</span>
+                      <span>{getBucketName(reminder.bill.bucketId)}</span>
+                    </div>
+                  </div>
+                  <div className="reminder-card__actions">
+                    <strong>{formatCurrency(reminder.bill.amountCents)}</strong>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      aria-label={`Dismiss ${reminder.bill.name} reminder for today`}
+                      onClick={() =>
+                        commitData(
+                          (current) =>
+                            dismissReminderForDay(current, reminder.id, getCurrentLocalDayKey()),
+                          'Reminder dismissed for today.',
+                        )
+                      }
+                    >
+                      Dismiss for today
+                    </button>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <p className="empty-state">No bills are coming up inside your current reminder window.</p>
+            )}
+          </div>
+        ) : (
+          <p className="empty-state">Reminders are off. Turn them on to see upcoming bill alerts.</p>
+        )}
+      </motion.section>
 
       <motion.section
         className="overview-panel"
