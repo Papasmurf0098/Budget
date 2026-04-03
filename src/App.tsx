@@ -174,38 +174,192 @@ function createSectionState(value: boolean): Record<SectionKey, boolean> {
   }
 }
 
+function GraphicShape({
+  className,
+  motionConfig,
+}: {
+  className: string
+  motionConfig?: ReturnType<typeof createGraphicAnimation>
+}) {
+  return (
+    <motion.span
+      className={className}
+      animate={motionConfig?.animate}
+      transition={motionConfig?.transition}
+    />
+  )
+}
+
 function PanelGraphic({ kind }: { kind: PanelGraphicKind }) {
   const prefersReducedMotion = useReducedMotion()
   const motionEnabled = !prefersReducedMotion
+  const animate = (config: Parameters<typeof createGraphicAnimation>[0]) =>
+    motionEnabled ? createGraphicAnimation(config) : undefined
 
-  return (
-    <div className={`panel-graphic panel-graphic--${kind}`} aria-hidden="true">
-      <motion.span
-        className="panel-graphic__shape panel-graphic__shape--one"
-        animate={
-          motionEnabled ? createGraphicAnimation({ x: 10, y: -12, rotate: 4, scale: 1.04, duration: 6.2 }) : undefined
-        }
-      />
-      <motion.span
-        className="panel-graphic__shape panel-graphic__shape--two"
-        animate={
-          motionEnabled ? createGraphicAnimation({ x: -8, y: 10, rotate: -6, scale: 0.98, duration: 7.4, delay: 0.3 }) : undefined
-        }
-      />
-      <motion.span
-        className="panel-graphic__shape panel-graphic__shape--three"
-        animate={
-          motionEnabled ? createGraphicAnimation({ x: 6, y: 12, rotate: 8, scale: 1.08, duration: 8.6, delay: 0.7 }) : undefined
-        }
-      />
-      <motion.span
-        className="panel-graphic__shape panel-graphic__shape--four"
-        animate={
-          motionEnabled ? createGraphicAnimation({ x: -12, y: -6, rotate: -8, scale: 1.03, duration: 9.1, delay: 0.4 }) : undefined
-        }
-      />
-    </div>
-  )
+  switch (kind) {
+    case 'overview':
+      return (
+        <div className="panel-graphic panel-graphic--overview" aria-hidden="true">
+          <div className="panel-graphic__scene panel-graphic__scene--graph">
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--graph-sheet"
+              motionConfig={animate({ x: -10, y: 10, rotate: -2, scale: 1.01, duration: 8.4 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--graph-grid"
+              motionConfig={animate({ x: -6, y: 8, rotate: -1, duration: 8.4, delay: 0.1 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--graph-line"
+              motionConfig={animate({ x: 8, y: -8, rotate: 2, scale: 1.04, duration: 6.8, delay: 0.2 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--graph-dot"
+              motionConfig={animate({ x: 4, y: -6, scale: 1.08, duration: 5.4, delay: 0.6 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--graph-tab"
+              motionConfig={animate({ x: -4, y: 4, rotate: -3, duration: 7.2, delay: 0.3 })}
+            />
+          </div>
+        </div>
+      )
+    case 'reminders':
+      return (
+        <div className="panel-graphic panel-graphic--reminders" aria-hidden="true">
+          <div className="panel-graphic__scene panel-graphic__scene--planner">
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--planner-card"
+              motionConfig={animate({ x: -10, y: 10, rotate: -2, duration: 8.9 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--planner-binding"
+              motionConfig={animate({ x: -10, y: 10, rotate: -2, duration: 8.9 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--planner-rings"
+              motionConfig={animate({ x: -6, y: 8, duration: 8.2, delay: 0.1 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--planner-alert"
+              motionConfig={animate({ x: 8, y: -8, rotate: 4, scale: 1.06, duration: 5.8, delay: 0.4 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--planner-lines"
+              motionConfig={animate({ x: -4, y: 6, duration: 7.1, delay: 0.2 })}
+            />
+          </div>
+        </div>
+      )
+    case 'income':
+      return (
+        <div className="panel-graphic panel-graphic--income" aria-hidden="true">
+          <div className="panel-graphic__scene panel-graphic__scene--calculator">
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--calc-body"
+              motionConfig={animate({ x: -8, y: 10, rotate: -3, duration: 8.6 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--calc-screen"
+              motionConfig={animate({ x: -6, y: 8, rotate: -2, duration: 8.6, delay: 0.1 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--calc-keys"
+              motionConfig={animate({ x: -8, y: 10, rotate: -3, duration: 8.6 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--calc-pencil"
+              motionConfig={animate({ x: 12, y: -10, rotate: 8, duration: 6.4, delay: 0.3 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--calc-accent"
+              motionConfig={animate({ x: 6, y: -6, scale: 1.06, duration: 5.2, delay: 0.7 })}
+            />
+          </div>
+        </div>
+      )
+    case 'expenses':
+      return (
+        <div className="panel-graphic panel-graphic--expenses" aria-hidden="true">
+          <div className="panel-graphic__scene panel-graphic__scene--receipt">
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--receipt-paper"
+              motionConfig={animate({ x: -8, y: 8, rotate: 2, duration: 8.2 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--receipt-lines"
+              motionConfig={animate({ x: -8, y: 8, rotate: 2, duration: 8.2, delay: 0.1 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--receipt-total"
+              motionConfig={animate({ x: 4, y: -4, scale: 1.04, duration: 6.2, delay: 0.3 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--receipt-pen"
+              motionConfig={animate({ x: 10, y: -12, rotate: -8, duration: 6.6, delay: 0.2 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--receipt-chip"
+              motionConfig={animate({ x: -6, y: 8, scale: 1.08, duration: 5.4, delay: 0.6 })}
+            />
+          </div>
+        </div>
+      )
+    case 'bills':
+      return (
+        <div className="panel-graphic panel-graphic--bills" aria-hidden="true">
+          <div className="panel-graphic__scene panel-graphic__scene--invoice">
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--invoice-paper"
+              motionConfig={animate({ x: -10, y: 10, rotate: 2, duration: 8.6 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--invoice-fold"
+              motionConfig={animate({ x: -10, y: 10, rotate: 2, duration: 8.6 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--invoice-lines"
+              motionConfig={animate({ x: -8, y: 8, rotate: 2, duration: 8.6, delay: 0.1 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--invoice-stamp"
+              motionConfig={animate({ x: 8, y: -8, rotate: 6, scale: 1.05, duration: 5.9, delay: 0.5 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--invoice-pin"
+              motionConfig={animate({ x: 6, y: -6, scale: 1.08, duration: 4.8, delay: 0.7 })}
+            />
+          </div>
+        </div>
+      )
+    case 'buckets':
+      return (
+        <div className="panel-graphic panel-graphic--buckets" aria-hidden="true">
+          <div className="panel-graphic__scene panel-graphic__scene--tray">
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--tray-base"
+              motionConfig={animate({ x: -8, y: 10, rotate: -2, duration: 8.8 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--tray-card-one"
+              motionConfig={animate({ x: -8, y: 10, rotate: -3, duration: 8.8, delay: 0.1 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--tray-card-two"
+              motionConfig={animate({ x: -6, y: 8, rotate: 1, duration: 8.4, delay: 0.2 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--tray-coin"
+              motionConfig={animate({ x: 8, y: -8, scale: 1.06, duration: 5.5, delay: 0.4 })}
+            />
+            <GraphicShape
+              className="panel-graphic__shape panel-graphic__shape--tray-tab"
+              motionConfig={animate({ x: 6, y: -4, rotate: 5, duration: 6.1, delay: 0.6 })}
+            />
+          </div>
+        </div>
+      )
+  }
 }
 
 function SectionPanel({
