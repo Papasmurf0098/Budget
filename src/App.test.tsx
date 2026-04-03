@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -8,6 +8,7 @@ import type { BudgetData } from './types'
 
 describe('App', () => {
   beforeEach(() => {
+    cleanup()
     window.localStorage.clear()
     vi.restoreAllMocks()
   })
@@ -125,6 +126,7 @@ describe('App', () => {
         reminderState: {
           dismissedDayByReminder: {},
           notifiedDayByReminder: {},
+          setupCompleted: true,
         },
       }),
     )
@@ -138,10 +140,8 @@ describe('App', () => {
     )
   })
 
-  it('updates visible reminders when the timing window changes', async () => {
+  it('hides the reminder panel after preferences are chosen and no reminders are active', async () => {
     const user = userEvent.setup()
-    const inThreeDays = new Date()
-    inThreeDays.setDate(inThreeDays.getDate() + 3)
 
     vi.spyOn(storage, 'loadBudgetData').mockReturnValue(
       parseBudgetData({
@@ -150,16 +150,7 @@ describe('App', () => {
         monthPlans: [],
         incomes: [],
         expenses: [],
-        recurringBills: [
-          {
-            id: 'bill-1',
-            name: 'Phone',
-            amountCents: 55_00,
-            bucketId: 'utilities',
-            dueDay: inThreeDays.getDate(),
-            active: true,
-          },
-        ],
+        recurringBills: [],
         billMonthStates: [],
         reminderSettings: {
           remindersEnabled: true,
@@ -169,19 +160,52 @@ describe('App', () => {
         reminderState: {
           dismissedDayByReminder: {},
           notifiedDayByReminder: {},
+          setupCompleted: false,
         },
       }),
     )
 
     render(<App />)
 
-    expect(screen.queryByRole('button', { name: /dismiss phone reminder for today/i })).not.toBeInTheDocument()
+    expect(screen.getAllByText(/keep upcoming bills in view/i).length).toBeGreaterThan(0)
     await user.selectOptions(screen.getAllByLabelText(/reminder timing/i)[0], '3')
-    expect(
-      screen
-        .getAllByRole('status')
-        .some((node) => node.textContent?.match(/reminder timing updated/i)),
-    ).toBe(true)
+
+    await waitFor(() =>
+      expect(screen.queryAllByText(/keep upcoming bills in view/i)).toHaveLength(0),
+    )
+    expect(screen.getByRole('button', { name: /reminder settings/i })).toBeInTheDocument()
+  })
+
+  it('reopens reminder settings from the header when the panel is hidden', async () => {
+    const user = userEvent.setup()
+
+    vi.spyOn(storage, 'loadBudgetData').mockReturnValue(
+      parseBudgetData({
+        version: 2,
+        buckets: [{ id: 'utilities', name: 'Utilities', color: '#ff7a59', archived: false }],
+        monthPlans: [],
+        incomes: [],
+        expenses: [],
+        recurringBills: [],
+        billMonthStates: [],
+        reminderSettings: {
+          remindersEnabled: true,
+          browserNotificationsEnabled: false,
+          remindDaysBefore: 3,
+        },
+        reminderState: {
+          dismissedDayByReminder: {},
+          notifiedDayByReminder: {},
+          setupCompleted: true,
+        },
+      }),
+    )
+
+    render(<App />)
+
+    expect(screen.queryAllByText(/keep upcoming bills in view/i)).toHaveLength(0)
+    await user.click(screen.getByRole('button', { name: /reminder settings/i }))
+    expect(screen.getAllByText(/keep upcoming bills in view/i).length).toBeGreaterThan(0)
   })
 
   it('falls back to in-app reminders when notification permission is denied', async () => {
@@ -201,8 +225,8 @@ describe('App', () => {
         monthPlans: [],
         incomes: [],
         expenses: [],
-      recurringBills: [
-        {
+        recurringBills: [
+          {
             id: 'bill-1',
             name: 'Internet',
             amountCents: 75_00,
@@ -211,15 +235,16 @@ describe('App', () => {
             active: true,
           },
         ],
-      billMonthStates: [],
-      reminderSettings: {
-        remindersEnabled: true,
-        browserNotificationsEnabled: false,
-        remindDaysBefore: 1,
-      },
-      reminderState: {
+        billMonthStates: [],
+        reminderSettings: {
+          remindersEnabled: true,
+          browserNotificationsEnabled: false,
+          remindDaysBefore: 1,
+        },
+        reminderState: {
           dismissedDayByReminder: {},
           notifiedDayByReminder: {},
+          setupCompleted: false,
         },
       }),
     )
@@ -264,6 +289,7 @@ describe('App', () => {
         reminderState: {
           dismissedDayByReminder: {},
           notifiedDayByReminder: {},
+          setupCompleted: true,
         },
       }),
     )
@@ -271,10 +297,9 @@ describe('App', () => {
     render(<App />)
     await user.click(screen.getAllByRole('button', { name: /dismiss internet reminder for today/i })[0])
 
-    expect(
-      screen
-        .getAllByRole('status')
-        .some((node) => node.textContent?.match(/reminder dismissed for today/i)),
-    ).toBe(true)
+    await waitFor(() =>
+      expect(screen.queryAllByText(/keep upcoming bills in view/i)).toHaveLength(0),
+    )
+    expect(screen.getByRole('button', { name: /reminder settings/i })).toBeInTheDocument()
   })
 })

@@ -4,6 +4,7 @@ import {
   addExpense,
   addIncome,
   addRecurringBill,
+  completeReminderSetup,
   createInitialBudgetData,
   deriveUpcomingReminders,
   dismissReminderForDay,
@@ -124,9 +125,26 @@ describe('budget calculations', () => {
     }
 
     expect(parseBudgetData(exported).buckets).toHaveLength(1)
+    expect(parseBudgetData(exported).reminderState.setupCompleted).toBe(false)
     expect(parseBudgetData({ ...exported, version: 1 }).incomes).toHaveLength(0)
     expect(() => parseBudgetData({ ...exported, version: 999 })).toThrow(/Expected version 2/)
     expect(() => parseBudgetData({ version: 2, buckets: [] })).toThrow(/include any buckets/)
+  })
+
+  it('marks reminder setup complete without disturbing existing reminder state', () => {
+    let data = createInitialBudgetData('2026-04')
+    data = addRecurringBill(data, {
+      name: 'Internet',
+      amountCents: 70_00,
+      bucketId: 'utilities',
+      dueDay: 10,
+    })
+    const reminderId = deriveUpcomingReminders(data, new Date('2026-04-10T12:00:00'))[0]?.id
+    data = dismissReminderForDay(data, reminderId!, '2026-04-10')
+    data = completeReminderSetup(data)
+
+    expect(data.reminderState.setupCompleted).toBe(true)
+    expect(data.reminderState.dismissedDayByReminder[reminderId!]).toBe('2026-04-10')
   })
 
   it('creates custom buckets', () => {

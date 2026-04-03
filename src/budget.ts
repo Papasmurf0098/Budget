@@ -54,6 +54,7 @@ export function createInitialBudgetData(monthKey = getCurrentMonthKey()): Budget
     reminderState: {
       dismissedDayByReminder: {},
       notifiedDayByReminder: {},
+      setupCompleted: false,
     },
   }
 }
@@ -292,6 +293,20 @@ export function markReminderNotified(
         ...data.reminderState.notifiedDayByReminder,
         [reminderId]: dayKey,
       },
+    },
+  }
+}
+
+export function completeReminderSetup(data: BudgetData): BudgetData {
+  if (data.reminderState.setupCompleted) {
+    return data
+  }
+
+  return {
+    ...data,
+    reminderState: {
+      ...data.reminderState,
+      setupCompleted: true,
     },
   }
 }
@@ -838,10 +853,12 @@ export function parseBudgetData(raw: unknown): BudgetData {
               ([key, value]) => (typeof value === 'string' ? [[key, value]] : []),
             ),
           ),
+          setupCompleted: raw.reminderState.setupCompleted === true,
         }
       : {
           dismissedDayByReminder: {},
           notifiedDayByReminder: {},
+          setupCompleted: false,
         }
 
   if (!buckets.length) {

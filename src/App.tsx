@@ -17,6 +17,7 @@ import {
   addRecurringBill,
   archiveBucket,
   buildExportPayload,
+  completeReminderSetup,
   createMonthDate,
   deriveUpcomingReminders,
   dismissReminderForDay,
@@ -193,6 +194,7 @@ function App() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
     typeof Notification === 'undefined' ? 'denied' : Notification.permission,
   )
+  const [showReminderSettings, setShowReminderSettings] = useState(false)
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>(
     createSectionState(true),
   )
@@ -207,6 +209,8 @@ function App() {
   const snapshot = deriveMonthSnapshot(data, selectedMonth)
   const monthOptions = getMonthOptions(data)
   const upcomingReminders = deriveUpcomingReminders(data)
+  const reminderPanelVisible =
+    showReminderSettings || upcomingReminders.length > 0 || !data.reminderState.setupCompleted
 
   const [incomeDraft, setIncomeDraft] = useState<IncomeDraft>(() => buildIncomeDraft())
   const [incomeEdits, setIncomeEdits] = useState<Record<string, IncomeDraft>>({})
@@ -302,6 +306,14 @@ function App() {
   function commitData(updater: (current: typeof data) => typeof data, successMessage: string) {
     setData((current) => updater(current))
     setMessage(successMessage)
+  }
+
+  function commitReminderPreference(
+    updater: (current: typeof data) => typeof data,
+    successMessage: string,
+  ) {
+    commitData((current) => completeReminderSetup(updater(current)), successMessage)
+    setShowReminderSettings(false)
   }
 
   function handleMonthChange(monthKey: MonthKey) {
@@ -511,14 +523,18 @@ function App() {
     setNotificationPermission(permission)
 
     if (permission === 'granted') {
-      commitData(
+      commitReminderPreference(
         (current) => updateReminderSettings(current, { browserNotificationsEnabled: true }),
         'Browser notifications enabled while the app is open.',
       )
       return
     }
 
-    setMessage('Browser notifications were not enabled. In-app reminders still work.')
+    commitData(
+      (current) => completeReminderSetup(current),
+      'Browser notifications were not enabled. In-app reminders still work.',
+    )
+    setShowReminderSettings(false)
   }
 
   const allSectionsOpen = sectionKeys.every((key) => openSections[key])
@@ -630,6 +646,15 @@ function App() {
           >
             {allSectionsOpen ? 'Collapse all sections' : 'Open all sections'}
           </button>
+          {!reminderPanelVisible ? (
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => setShowReminderSettings(true)}
+            >
+              Reminder settings
+            </button>
+          ) : null}
           <button className="ghost-button" type="button" onClick={handleExport}>
             Export JSON
           </button>
@@ -649,13 +674,14 @@ function App() {
         </div>
       </motion.header>
 
-      <motion.section
-        className="reminder-panel"
-        initial="hidden"
-        animate="visible"
-        variants={enterAnimation}
-        transition={{ delay: 0.04, duration: 0.42, ease: 'easeOut' }}
-      >
+      {reminderPanelVisible ? (
+        <motion.section
+          className="reminder-panel"
+          initial="hidden"
+          animate="visible"
+          variants={enterAnimation}
+          transition={{ delay: 0.04, duration: 0.42, ease: 'easeOut' }}
+        >
         <div className="section-heading reminder-panel__heading">
           <div className="section-heading__copy">
             <p className="eyebrow">Reminders</p>
@@ -674,7 +700,7 @@ function App() {
               type="checkbox"
               checked={data.reminderSettings.remindersEnabled}
               onChange={(event) =>
-                commitData(
+                commitReminderPreference(
                   (current) =>
                     updateReminderSettings(current, {
                       remindersEnabled: event.target.checked,
@@ -690,7 +716,7 @@ function App() {
               aria-label="Reminder timing"
               value={String(data.reminderSettings.remindDaysBefore)}
               onChange={(event) =>
-                commitData(
+                commitReminderPreference(
                   (current) =>
                     updateReminderSettings(current, {
                       remindDaysBefore: Number(event.target.value) as (typeof reminderDayOptions)[number],
@@ -717,7 +743,7 @@ function App() {
                 type="checkbox"
                 checked={data.reminderSettings.browserNotificationsEnabled}
                 onChange={(event) =>
-                  commitData(
+                  commitReminderPreference(
                     (current) =>
                       updateReminderSettings(current, {
                         browserNotificationsEnabled: event.target.checked,
@@ -780,7 +806,8 @@ function App() {
         ) : (
           <p className="empty-state">Reminders are off. Turn them on to see upcoming bill alerts.</p>
         )}
-      </motion.section>
+        </motion.section>
+      ) : null}
 
       <motion.section
         className="overview-panel"

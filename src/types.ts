@@ -73,6 +73,7 @@ export interface ReminderSettings {
 export interface ReminderState {
   dismissedDayByReminder: Record<string, string>
   notifiedDayByReminder: Record<string, string>
+  setupCompleted: boolean
 }
 
 export interface BucketSummary {
